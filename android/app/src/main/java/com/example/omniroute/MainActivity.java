@@ -1,4 +1,4 @@
-package com.example.omni;
+package com.example.omniroute;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
