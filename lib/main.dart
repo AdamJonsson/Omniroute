@@ -11,6 +11,14 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
+        backgroundColor: Colors.grey[200],
+        canvasColor: Colors.grey[200],
+        cardTheme: CardTheme(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))
+          ),
+          elevation: 0.0,
+        ),
         primarySwatch: Colors.brown,
       ),
       home: UpcommingTravelPage()
