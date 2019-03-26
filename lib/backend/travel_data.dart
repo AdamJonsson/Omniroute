@@ -14,7 +14,7 @@ class Travel {
 
   ///Gets the duration until the travel is begning
   Duration durationUntilTravelBegin() {
-    return DateTime.now().difference(this.begin);
+    return this.begin.difference(DateTime.now());
   }
 }
 
