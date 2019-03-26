@@ -17,3 +17,20 @@ class Travel {
     return DateTime.now().difference(this.begin);
   }
 }
+
+
+class TravelDummyCreator {
+
+  ///Gets a travel object dummy that set travel start and end date some time after
+  ///current date
+  static Travel getTravelDummy() {
+    var currentDate = DateTime.now();
+    var travelStartDate = currentDate.add(Duration(hours: 1, minutes: 22, seconds: 10));
+    var travelEndDate = travelStartDate.add(Duration(hours: 1)); 
+    return Travel(
+      travelStartDate,
+      travelEndDate,
+      travelEndDate.add(Duration(minutes: 25))
+    );
+  }
+}
