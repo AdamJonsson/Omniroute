@@ -1,3 +1,4 @@
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 ///Data about a travel
 class Travel {
@@ -19,7 +20,185 @@ class Travel {
 }
 
 
+class Station {
+  final String name;
+  final DateTime timeWhenBussArive;
+  final LatLng coordinates;
+  bool isSelectedStation;
+  final bool isWork;
+
+  Station({this.name, this.timeWhenBussArive, this.coordinates, this.isSelectedStation = false, this.isWork = false});
+
+  ///If this station is an upcomming station or not
+  bool isUpcomming() {
+    return !timeWhenBussArive.isBefore(DateTime.now());
+  }
+}
+
+
 class TravelDummyCreator {
+
+  static List<Station> createStations() {
+    var stationTime = DateTime.now().subtract(Duration(minutes: 20));
+    List<Station> stations = [];
+
+    stations.add(Station(
+      name: 'Gullmarsplan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Skanstull',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Eriksdal',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Södra station',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Wollmar Yxkullsgatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Rosenlundsgatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Zinkensdamm',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+    
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Ansgariegatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Varvsgatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Hornstull',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Högalidsgatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Västerbroplan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Mariebergsgatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Fridhemsplan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+    
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Fleminggatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'S:t Eriksplan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Dalagatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Odenplan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+      isSelectedStation: true
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 1));
+    stations.add(Station(
+      name: 'Stadsbiblioteket',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Roslagsgatan',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Valhallavägen',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+    ));
+
+    stationTime = stationTime.add(Duration(minutes: 2));
+    stations.add(Station(
+      name: 'Östra station',
+      timeWhenBussArive: stationTime,
+      coordinates: null,
+      isWork: true
+    ));
+
+    return stations;
+  }
 
   ///Gets a travel object dummy that set travel start and end date some time after
   ///current date

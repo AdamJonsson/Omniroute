@@ -3,6 +3,11 @@ import 'package:omniroute/upcomming_travel.dart';
 
 void main() => runApp(MyApp());
 
+AppBar mainAppBar = AppBar(
+  title: Text('Omniroute'),
+  elevation: 2.0,
+);
+
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
@@ -21,7 +26,50 @@ class MyApp extends StatelessWidget {
         ),
         primarySwatch: Colors.brown,
       ),
-      home: UpcommingTravelPage()
+      home: LoginPage(),
+    );
+  }
+}
+
+
+class LoginPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: mainAppBar,
+      body: Container(
+        padding: EdgeInsets.all(15.0),
+        child: Column(
+          children: <Widget>[
+            Text(
+              'Omniroute',
+              style: Theme.of(context).textTheme.display2
+            ),
+            SizedBox(height: 20.0,),
+            TextFormField(
+              decoration: InputDecoration(
+                hintText: 'Username'
+              ),
+            ),
+            TextFormField(
+              decoration: InputDecoration(
+                hintText: 'Password'
+              ),
+            ),
+            SizedBox(height: 20.0,),
+            RaisedButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return UpcommingTravelPage();
+                  }
+                ));
+              },
+              child: Text('Login'),
+            )
+          ],
+        )
+      ),
     );
   }
 }
