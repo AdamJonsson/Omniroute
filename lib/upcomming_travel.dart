@@ -1,10 +1,28 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:omniroute/backend/travel_data.dart';
 import 'package:omniroute/map.dart';
 import 'package:omniroute/time_list.dart';
 
-class UpcommingTravelPage extends StatelessWidget {
+class UpcommingTravelPage extends StatefulWidget {
+  @override
+  _UpcommingTravelPageState createState() => _UpcommingTravelPageState();
+}
+
+class _UpcommingTravelPageState extends State<UpcommingTravelPage> {
+  List<Station> _stations;
+  Station _focusStation;
+  ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _stations = TravelDummyCreator.createStations();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,28 +42,196 @@ class UpcommingTravelPage extends StatelessWidget {
         ],
         elevation: 2.0,
       ),
-      body: TimeLine(),
+      body: LayoutBuilder(
+        builder: (context, constrains) {
+          return CustomScrollView(
+            controller: _scrollController,
+            slivers: <Widget>[
+              SliverPersistentHeader(
+                delegate: TimlineContainerDelegate(
+                  viewportHeight: constrains.maxHeight,
+                  child: StationData(
+                    TimeLine(
+                      onStationLocationButton: (station) {
+                        if(_scrollController != null) {
+                          _scrollController.animateTo(
+                            _scrollController.position.maxScrollExtent,
+                            duration: Duration(seconds: 1),
+                            curve: Curves.bounceOut
+                          );
+                        }
+                        setState(() {
+                          _focusStation = station;
+                        });
+                      },
+                    ),
+                    _stations
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: StationData(
+                  StationMap(constrains.maxHeight, _focusStation),
+                  _stations
+                )
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
 
 
+class StationData extends InheritedWidget {
+  final Widget child;
+  final List<Station> stations;
+
+  StationData(this.child, this.stations) : super(child: child);
+
+  @override
+  bool updateShouldNotify(InheritedWidget oldWidget) {
+    // TODO: implement updateShouldNotify
+    return true;
+  }
+
+}
+
+
+class StationMap extends StatefulWidget {
+  final maxHeight;
+  final Station focusStation;
+  StationMap(this.maxHeight, this.focusStation);
+
+  @override
+  _StationMapState createState() => _StationMapState();
+}
+
+class _StationMapState extends State<StationMap> {
+
+  List<Station> _stations = [];
+  GoogleMapController _mapController;
+
+  @override
+  void didUpdateWidget(StationMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if(_mapController != null && widget.focusStation != null) {
+      _mapController.moveCamera(CameraUpdate.newLatLng(
+        widget.focusStation.coordinates
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    StationData stationData = context.inheritFromWidgetOfExactType(StationData);
+    _stations = stationData.stations;
+
+    return Container(
+      height: widget.maxHeight * 0.9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        child: Stack(
+          alignment: Alignment.topCenter,
+          children: <Widget>[
+            Container(
+              margin: EdgeInsets.only(top: 20),
+              child: GoogleMap(
+                onMapCreated: (controller) {
+                  _mapController = controller;
+                },
+                gestureRecognizers: Set()
+                  ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
+                  ..add(Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer())),
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(59.3428, 18.0485),
+                  zoom: 16.0
+                ),
+                markers: _stations.map((station) {
+                  return Marker(
+                    markerId: MarkerId(station.name),
+                    position: station.coordinates,
+                    infoWindow: InfoWindow(
+                      title: station.name
+                    )
+                  );
+                }).toSet(),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 20.0),
+              height: 100.0,
+              width: double.infinity,
+              alignment: Alignment.topCenter,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.white, Colors.white.withOpacity(0.0)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.2, 1.0]
+                )
+              ),
+              child: Container(
+                decoration: ShapeDecoration(
+                  shape: StadiumBorder(),
+                  color: Colors.grey[300],
+                ),
+                height: 7.0,
+                width: 100,
+              ),
+            ),
+          ],
+        ),
+      )
+    );
+  }
+}
+
+
+class TimlineContainerDelegate extends SliverPersistentHeaderDelegate {
+  
+  final Widget child;
+  final double viewportHeight;
+
+  TimlineContainerDelegate({this.child, this.viewportHeight});
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return this.child;
+  }
+
+  @override
+  double get maxExtent => this.viewportHeight * 0.9;
+
+  @override
+  double get minExtent => this.viewportHeight * 0.0;
+
+  @override
+  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
+  }
+
+}
+
+
 class TimeLine extends StatefulWidget {
   final lineMargin = EdgeInsets.only(left: 10);
+  final Function(Station) onStationLocationButton;
+  TimeLine({@required this.onStationLocationButton});
 
   @override
   _TimeLineState createState() => _TimeLineState();
 }
 
 class _TimeLineState extends State<TimeLine> {
-  Travel travelDummy;
-  List<Station> stations;
+
+  List<Station> _stations;
 
   @override
   void initState() {
     super.initState();
-    travelDummy =  TravelDummyCreator.getTravelDummy();
-    stations = TravelDummyCreator.createStations();
     _updateLoop();
   }
 
@@ -55,6 +241,7 @@ class _TimeLineState extends State<TimeLine> {
       setState(() {
         
       });
+
       _updateLoop();
     });
   }
@@ -62,7 +249,7 @@ class _TimeLineState extends State<TimeLine> {
 
   ///Getting the selected station
   Station _getSelectedStation() {
-    for(var station in stations) {
+    for(var station in _stations) {
       if(station.isSelectedStation) {
         return station;
       }
@@ -72,7 +259,7 @@ class _TimeLineState extends State<TimeLine> {
 
 
   Station _getStationBusIsAt() {
-    for(var station in stations) {
+    for(var station in _stations) {
       if(_busAtStation(station)) {
         return station;
       }
@@ -81,17 +268,28 @@ class _TimeLineState extends State<TimeLine> {
   }
 
 
+  ///Selects a station 
+  void _selectStation(Station station) {
+    _stations.forEach((station) {
+      station.isSelectedStation = false;
+    });
+    setState(() {
+      station.isSelectedStation = true;
+    });
+  }
+
+
   List<Widget> _generateTimeline() {
     List<Widget> timelineCards = [];
     bool bussCardAdded = false;
-    stations.forEach((station) {
+    _stations.forEach((station) {
 
       //Adding the bus at the right place
       if(station.isUpcomming() == true && !bussCardAdded) {
         var selectedStation = _getSelectedStation();
         var targetIsWork = false;
         if(!selectedStation.isUpcomming()) {
-          selectedStation = stations.last;
+          selectedStation = _stations.last;
           targetIsWork = true;
         }
         timelineCards.add(BussCard(
@@ -112,11 +310,29 @@ class _TimeLineState extends State<TimeLine> {
           cardContent: ListTile(
             title: Text(station.name),
             subtitle: Text(DateFormat.Hms().format(station.timeWhenBussArive).toString() + ' kl'),
-            trailing: IconButton(
-              onPressed: () {
-                
-              },
-              icon: Icon(Icons.location_on)
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Builder(builder: (context) {
+                  if(!station.isUpcomming() || station.isWork || station.isSelectedStation) {
+                    return Container();
+                  }
+                  else {
+                    return IconButton(
+                      onPressed: () {
+                        _selectStation(station);
+                      },
+                      icon: Icon(Icons.directions_walk)
+                    );
+                  }
+                },),
+                IconButton(
+                  onPressed: () {
+                    widget.onStationLocationButton(station);
+                  },
+                  icon: Icon(Icons.location_on)
+                ),
+              ],
             )
           ),
           onLine: _buildOnlineWidget(station),
@@ -155,9 +371,16 @@ class _TimeLineState extends State<TimeLine> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.only(left: 15.0, right: 15.0, bottom: 50.0),
-      children: _generateTimeline()
+    StationData widget = context.inheritFromWidgetOfExactType(StationData);
+    _stations = widget.stations;
+
+    return Container(
+      color: Colors.grey[200],
+      child: ListView(
+        primary: true,
+        padding: EdgeInsets.only(left: 15.0, right: 15.0, bottom: 50.0),
+        children: _generateTimeline()
+      ),
     );
   }
 }
