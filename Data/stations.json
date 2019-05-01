@@ -1,0 +1,112 @@
+[
+    {
+        "name": "Gullmarsplan",
+        "lat": 59.298404,
+        "long": 18.079349
+    },
+    {
+        "name": "Skanstull",
+        "lat": 59.307890,
+        "long": 18.075727
+    },
+    {
+        "name": "Eriksdal",
+        "lat": 59.306291,
+        "long": 18.068771
+    },
+    {
+        "name": "Södra station",
+        "lat": 59.312852,
+        "long": 18.057792
+    },
+    {
+        "name": "Wollmar Yxkullsgatan",
+        "lat": 59.316226,
+        "long": 18.058193
+    },
+    {
+        "name": "Rosenlundsgatan",
+        "lat": 59.314335,
+        "long": 18.056886
+    },
+    {
+        "name": "Zinkensdamm",
+        "lat": 59.317970,
+        "long": 18.050198
+    },
+    {
+        "name": "Ansgariegatan",
+        "lat": 59.316884,
+        "long": 18.046470
+    },
+    {
+        "name": "Varvsgatan",
+        "lat": 59.318106,
+        "long": 18.039904
+    },
+    {
+        "name": "Hornstull",
+        "lat": 59.316658,
+        "long": 18.033236
+    },
+    {
+        "name": "Högalidsgatan",
+        "lat": 59.318111,
+        "long": 18.035498
+    },
+    {
+        "name": "Västerbroplan",
+        "lat": 59.328381,
+        "long": 18.022002
+    },
+    {
+        "name": "Mariebergsgatan",
+        "lat": 59.333423,
+        "long": 18.024457
+    },
+    {
+        "name": "Fridhemsplan",
+        "lat": 59.332148,
+        "long": 18.029269
+    },
+    {
+        "name": "Fleminggatan",
+        "lat": 59.333741,
+        "long": 18.038048
+    },
+    {
+        "name": "S:t Eriksplan",
+        "lat": 59.339490,
+        "long": 18.037127
+    },
+    {
+        "name": "Dalagatan",
+        "lat": 59.341431,
+        "long": 18.044584
+    },
+    {
+        "name": "Odenplan",
+        "lat": 59.343077,
+        "long": 18.050349
+    },
+    {
+        "name": "Stadsbiblioteket",
+        "lat": 59.344314,
+        "long": 18.055106
+    },
+    {
+        "name": "Roslagsgatan",
+        "lat": 59.346922,
+        "long": 18.059569
+    },
+    {
+        "name": "Valhallavägen",
+        "lat": 59.346825,
+        "long": 18.066786
+    },
+    {
+        "name": "Östra station",
+        "lat": 59.345546,
+        "long": 18.070804
+    }
+]

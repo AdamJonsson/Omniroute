@@ -23,22 +23,30 @@ class _UpcommingTravelPageState extends State<UpcommingTravelPage> {
     _stations = TravelDummyCreator.createStations();
   }
 
+  void _expandMap() {
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: Duration(seconds: 1),
+      curve: Curves.bounceOut
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Omniroute'),
+        title: Text('Timeline'),
         actions: <Widget>[
-          IconButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return TimeList();
-                }
-              ));
-            },
-            icon: Icon(Icons.timelapse),
-          )
+          // IconButton(
+          //   onPressed: () {
+          //     Navigator.push(context, MaterialPageRoute(
+          //       builder: (context) {
+          //         return TimeList();
+          //       }
+          //     ));
+          //   },
+          //   icon: Icon(Icons.timelapse),
+          // )
         ],
         elevation: 2.0,
       ),
@@ -50,30 +58,28 @@ class _UpcommingTravelPageState extends State<UpcommingTravelPage> {
               SliverPersistentHeader(
                 delegate: TimlineContainerDelegate(
                   viewportHeight: constrains.maxHeight,
-                  child: StationData(
-                    TimeLine(
-                      onStationLocationButton: (station) {
-                        if(_scrollController != null) {
-                          _scrollController.animateTo(
-                            _scrollController.position.maxScrollExtent,
-                            duration: Duration(seconds: 1),
-                            curve: Curves.bounceOut
-                          );
-                        }
-                        setState(() {
-                          _focusStation = station;
-                        });
-                      },
-                    ),
-                    _stations
+                  child: TimeLine(
+                    stations: _stations,
+                    onStationLocationButton: (station) {
+                      if(_scrollController != null) {
+                        _expandMap();
+                      }
+                      setState(() {
+                        _focusStation = station;
+                      });
+                    },
                   ),
                 ),
               ),
               SliverToBoxAdapter(
-                child: StationData(
-                  StationMap(constrains.maxHeight, _focusStation),
-                  _stations
-                )
+                child: StationMap(
+                  constrains.maxHeight, 
+                  _stations,
+                  _focusStation, 
+                  () {
+                    _expandMap();
+                  },
+                ),
               ),
             ],
           );
@@ -84,25 +90,12 @@ class _UpcommingTravelPageState extends State<UpcommingTravelPage> {
 }
 
 
-class StationData extends InheritedWidget {
-  final Widget child;
-  final List<Station> stations;
-
-  StationData(this.child, this.stations) : super(child: child);
-
-  @override
-  bool updateShouldNotify(InheritedWidget oldWidget) {
-    // TODO: implement updateShouldNotify
-    return true;
-  }
-
-}
-
-
 class StationMap extends StatefulWidget {
   final maxHeight;
+  final List<Station> stations;
   final Station focusStation;
-  StationMap(this.maxHeight, this.focusStation);
+  final VoidCallback onTopDrawerClick;
+  StationMap(this.maxHeight, this.stations, this.focusStation, this.onTopDrawerClick);
 
   @override
   _StationMapState createState() => _StationMapState();
@@ -110,14 +103,128 @@ class StationMap extends StatefulWidget {
 
 class _StationMapState extends State<StationMap> {
 
-  List<Station> _stations = [];
   GoogleMapController _mapController;
+  Set<Polyline> lines = {};
+
+  ///All the coordinates that the bus has to drive
+  List<LatLng> _currentBusLine;
+  LatLng _busPosition;
+
+  BitmapDescriptor _stationMarker = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _busMarker = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _stationMarkerFull = BitmapDescriptor.defaultMarker;
+
+  @override
+  void initState() {
+    super.initState();
+    _createRoute();
+    _updateNextStationLoop();
+
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(1.0, 1.0), ), 'assets/markers/icon_hollow.png').then((icon) {
+      setState(() {
+        _stationMarker = icon;
+      });
+    });
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(1.0, 1.0), ), 'assets/markers/bus.png').then((icon) {
+      setState(() {
+        _busMarker = icon;
+      });
+    });
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(1.0, 1.0), ), 'assets/markers/icon_full.png').then((icon) {
+      setState(() {
+        _stationMarkerFull = icon;
+      });
+    });
+  }
+
+  ///Updates every time the bus arrives at a new
+  ///station
+  void _updateNextStationLoop() {
+    var nextStation = StationData.getNextStation(widget.stations);
+    Future.delayed(nextStation.durationUntilBuss()).then((_) {
+      _createRoute();
+      setState(() {
+      });
+      _updateNextStationLoop();
+    });
+  }
+
+  void _createRoute() {
+    var routes = TravelDummyCreator.getRoutes();
+    lines = {};
+    for (var route in routes) {
+      List<LatLng> coords = [];
+      for(var coord in route['coords'][1]) {
+        coords.add(LatLng(coord[1], coord[0]));
+      }
+
+      var isNextStation = _isNextStation(route['to']);
+      if(isNextStation) {
+        _currentBusLine = coords.toList();
+      }
+      lines.add(Polyline(
+        polylineId: PolylineId(route['from']),
+        points: coords,
+        zIndex: isNextStation ? 1 : 0,
+        color: isNextStation ? Colors.tealAccent : Colors.teal,
+        width: isNextStation ? 4 : 2
+      ));
+    }
+
+    var nextStation = StationData.getNextStation(widget.stations);
+    _updateBusPosition(
+      Duration(milliseconds: (nextStation.durationUntilBuss().inMilliseconds / _currentBusLine.length).floor())
+    );
+  }
+
+  void _updateBusPosition(Duration updateInterval) {
+    if(_currentBusLine.length > 0) {
+      _busPosition = _currentBusLine.removeAt(0);
+      Future.delayed(updateInterval).then((_) {
+        _updateBusPosition(updateInterval);
+        setState(() {
+          
+        });
+      });
+    }
+  }
+
+  Set<Marker> _generateMarkers() {
+    Set<Marker> markers;
+    markers = widget.stations.map((station) {
+      return Marker(
+        markerId: MarkerId(station.name),
+        position: station.coordinates,
+        infoWindow: InfoWindow(
+          title: station.name
+        ),
+        icon: station.isUpcomming() ? _stationMarker : _stationMarkerFull
+      );
+    }).toSet();
+
+    markers.add(Marker(
+      markerId: MarkerId('Buss'),
+      position: _busPosition,
+      anchor: Offset(0.5, 0.5),
+      infoWindow: InfoWindow(
+        title: 'Bussen'
+      ),
+      icon: _busMarker
+    ));
+
+    return markers;
+  }
+
+  ///Check if the next station has the name given
+  bool _isNextStation(String name) {
+    return StationData.getNextStation(widget.stations).name == name;
+  }
 
   @override
   void didUpdateWidget(StationMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     if(_mapController != null && widget.focusStation != null) {
-      _mapController.moveCamera(CameraUpdate.newLatLng(
+      _mapController.animateCamera(CameraUpdate.newLatLng(
         widget.focusStation.coordinates
       ));
     }
@@ -125,9 +232,6 @@ class _StationMapState extends State<StationMap> {
 
   @override
   Widget build(BuildContext context) {
-
-    StationData stationData = context.inheritFromWidgetOfExactType(StationData);
-    _stations = stationData.stations;
 
     return Container(
       height: widget.maxHeight * 0.9,
@@ -139,6 +243,7 @@ class _StationMapState extends State<StationMap> {
             Container(
               margin: EdgeInsets.only(top: 20),
               child: GoogleMap(
+                myLocationEnabled: true,
                 onMapCreated: (controller) {
                   _mapController = controller;
                 },
@@ -149,37 +254,51 @@ class _StationMapState extends State<StationMap> {
                   target: LatLng(59.3428, 18.0485),
                   zoom: 16.0
                 ),
-                markers: _stations.map((station) {
-                  return Marker(
-                    markerId: MarkerId(station.name),
-                    position: station.coordinates,
-                    infoWindow: InfoWindow(
-                      title: station.name
-                    )
-                  );
-                }).toSet(),
+                polylines: lines,
+                markers: _generateMarkers(),
               ),
             ),
-            Container(
-              padding: EdgeInsets.only(top: 20.0),
-              height: 100.0,
-              width: double.infinity,
-              alignment: Alignment.topCenter,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.white, Colors.white.withOpacity(0.0)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: [0.2, 1.0]
-                )
-              ),
-              child: Container(
-                decoration: ShapeDecoration(
-                  shape: StadiumBorder(),
-                  color: Colors.grey[300],
+            Positioned(
+              bottom: 115.0,
+              right: 10.0,
+              child: Material(
+                elevation: 3.0,
+                shape: CircleBorder(),
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(5.0),
+                  child: IconButton(
+                    onPressed: () {
+                      _mapController.moveCamera(CameraUpdate.newLatLng(_busPosition));
+                    },
+                    icon: Icon(Icons.directions_bus, color: Colors.grey[700],),
+                  ),
                 ),
-                height: 7.0,
-                width: 100,
+              ),
+            ),
+            GestureDetector(
+              onTap: widget.onTopDrawerClick,
+              child: Container(
+                padding: EdgeInsets.only(top: 20.0),
+                height: 100.0,
+                width: double.infinity,
+                alignment: Alignment.topCenter,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.white, Colors.white.withOpacity(0.0)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.2, 1.0]
+                  )
+                ),
+                child: Container(
+                  decoration: ShapeDecoration(
+                    shape: StadiumBorder(),
+                    color: Colors.grey[300],
+                  ),
+                  height: 7.0,
+                  width: 100,
+                ),
               ),
             ),
           ],
@@ -217,17 +336,16 @@ class TimlineContainerDelegate extends SliverPersistentHeaderDelegate {
 
 
 class TimeLine extends StatefulWidget {
+  final List<Station> stations;
   final lineMargin = EdgeInsets.only(left: 10);
   final Function(Station) onStationLocationButton;
-  TimeLine({@required this.onStationLocationButton});
+  TimeLine({@required this.onStationLocationButton, @required this.stations});
 
   @override
   _TimeLineState createState() => _TimeLineState();
 }
 
 class _TimeLineState extends State<TimeLine> {
-
-  List<Station> _stations;
 
   @override
   void initState() {
@@ -237,40 +355,18 @@ class _TimeLineState extends State<TimeLine> {
 
 
   void _updateLoop() {
-    Future.delayed(Duration(seconds: 1)).then((_) {
+    Future.delayed(Duration(seconds: 4)).then((_) {
       setState(() {
         
       });
-
       _updateLoop();
     });
   }
 
 
-  ///Getting the selected station
-  Station _getSelectedStation() {
-    for(var station in _stations) {
-      if(station.isSelectedStation) {
-        return station;
-      }
-    }
-    return null;
-  }
-
-
-  Station _getStationBusIsAt() {
-    for(var station in _stations) {
-      if(_busAtStation(station)) {
-        return station;
-      }
-    }
-    return null;
-  }
-
-
   ///Selects a station 
   void _selectStation(Station station) {
-    _stations.forEach((station) {
+    widget.stations.forEach((station) {
       station.isSelectedStation = false;
     });
     setState(() {
@@ -282,20 +378,20 @@ class _TimeLineState extends State<TimeLine> {
   List<Widget> _generateTimeline() {
     List<Widget> timelineCards = [];
     bool bussCardAdded = false;
-    _stations.forEach((station) {
+    widget.stations.forEach((station) {
 
       //Adding the bus at the right place
       if(station.isUpcomming() == true && !bussCardAdded) {
-        var selectedStation = _getSelectedStation();
+        var selectedStation = StationData.getSelectedStation(widget.stations);
         var targetIsWork = false;
         if(!selectedStation.isUpcomming()) {
-          selectedStation = _stations.last;
+          selectedStation = widget.stations.last;
           targetIsWork = true;
         }
         timelineCards.add(BussCard(
           selectedStation.timeWhenBussArive,
           targetIsWork,
-          _getStationBusIsAt()
+          StationData.getStationBusIsAt(widget.stations),
         ));
         bussCardAdded = true;
       }
@@ -303,35 +399,76 @@ class _TimeLineState extends State<TimeLine> {
       timelineCards.add(
         TimeLineCard(
           key: Key(station.name),
-          expanded: !_busAtStation(station),
+          expanded: !StationData.isBusAtStation(station),
           isUpcomming: station.isUpcomming(),
           isLastEvent: station.isWork,
           importantLevel: station.isWork || station.isSelectedStation ? 4 : 0,
           cardContent: ListTile(
-            title: Text(station.name),
-            subtitle: Text(DateFormat.Hms().format(station.timeWhenBussArive).toString() + ' kl'),
+            title: Row(
+              children: <Widget>[
+                Text(
+                  DateFormat.Hm().format(station.timeWhenBussArive).toString(),
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 5.0,),
+                Text(station.name)
+              ],
+            ),
+            subtitle: Builder(builder: (context) {
+              if(!station.isUpcomming()) {
+                return Text('Bus already arrived');
+              }
+              return Text(DateFormat.Hms().format(station.timeWhenBussArive).toString() + ' kl');
+            },),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Builder(builder: (context) {
-                  if(!station.isUpcomming() || station.isWork || station.isSelectedStation) {
+                  if(station.isWork) {
                     return Container();
                   }
                   else {
-                    return IconButton(
-                      onPressed: () {
-                        _selectStation(station);
+                    return PopupMenuButton(
+                      child: Icon(Icons.more_horiz),
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+                        PopupMenuItem<int>(
+                          value: 1,
+                          child: IconRowButton(icon: Icons.directions_run, text: 'Select as pickup station',)
+                        ),
+                        PopupMenuItem<int>(
+                          value: 2,
+                          child: IconRowButton(icon: Icons.location_on, text: 'See location',)
+                        ),
+                        PopupMenuItem<int>(
+                          enabled: station.isUpcomming(),
+                          value: 3,
+                          child: IconRowButton(icon: Icons.notifications, text: 'Notify when bus arrives',)
+                        ),
+                      ],
+                      onSelected: (value) {
+                        switch(value) {
+                          case 1:
+                            _selectStation(station);
+                            break;
+                          case 2:
+                            widget.onStationLocationButton(station);
+                            break;
+                          case 3:
+                            Scaffold.of(context).showSnackBar(SnackBar(
+                              content: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text('You will be notified when bus arrives at'),
+                                  Text(station.name, style: TextStyle(fontSize: 20),)
+                                ],
+                              ),
+                            ));
+                        }
                       },
-                      icon: Icon(Icons.directions_walk)
                     );
                   }
                 },),
-                IconButton(
-                  onPressed: () {
-                    widget.onStationLocationButton(station);
-                  },
-                  icon: Icon(Icons.location_on)
-                ),
               ],
             )
           ),
@@ -344,17 +481,10 @@ class _TimeLineState extends State<TimeLine> {
   }
 
 
-  ///If the bus is at the station
-  bool _busAtStation(Station station) {
-    var timeDiff = station.timeWhenBussArive.difference(DateTime.now()).inSeconds.abs();
-    return timeDiff < 5;
-  }
-
-
   Widget _buildOnlineWidget(Station station) {
     if(station.isSelectedStation) {
       return TimelineIcon(
-        Icons.home,
+        Icons.directions_run,
         station.isUpcomming() ? Colors.grey : Theme.of(context).primaryColor
       );
     }
@@ -371,8 +501,6 @@ class _TimeLineState extends State<TimeLine> {
 
   @override
   Widget build(BuildContext context) {
-    StationData widget = context.inheritFromWidgetOfExactType(StationData);
-    _stations = widget.stations;
 
     return Container(
       color: Colors.grey[200],
@@ -386,12 +514,33 @@ class _TimeLineState extends State<TimeLine> {
 }
 
 
+class IconRowButton extends StatelessWidget {
+
+  final IconData icon;
+  final String text;
+  const IconRowButton({@required this.icon, @required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Expanded(
+          child: Text(text),
+        ),
+        Icon(icon),
+      ],
+    );
+  }
+}
+
+
 ///The bus cards
 class BussCard extends StatefulWidget {
   final bool isWork;
   final Station stationAt;
   final DateTime selectedStationTime;
-  BussCard(this.selectedStationTime, this.isWork, this.stationAt);
+  BussCard(this.selectedStationTime, this.isWork, this.stationAt, {Key key}) : super(key: key);
 
   @override
   _BussCardState createState() => _BussCardState();
@@ -412,6 +561,8 @@ class _BussCardState extends State<BussCard> with SingleTickerProviderStateMixin
       parent: _collapseController,
       curve: Curves.easeInOut,
     );
+
+
   }
 
   @override
@@ -419,7 +570,7 @@ class _BussCardState extends State<BussCard> with SingleTickerProviderStateMixin
     super.didUpdateWidget(oldWidget);
     if(widget.stationAt != null) {
       _collapseController.forward();
-    }
+    } 
     else {
       _collapseController.reverse();
     }
@@ -613,7 +764,7 @@ class TimelineLine extends StatelessWidget {
 
   final int importantLevel;
 
-  TimelineLine({@required this.child, @required this.onLine, @required this.isUpcomming, @required this.isCurrentEvent, @required this.isLastEvent, this.importantLevel = 0});
+  TimelineLine({Key key, @required this.child, @required this.onLine, @required this.isUpcomming, @required this.isCurrentEvent, @required this.isLastEvent, this.importantLevel = 0}) : super(key: key);
 
   Widget _buildLineIcon(BuildContext context) {
 

@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
           ),
           elevation: 0.0,
         ),
-        primarySwatch: Colors.brown,
+        primarySwatch: Colors.teal,
       ),
       home: LoginPage(),
     );
@@ -37,38 +37,51 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: mainAppBar,
-      body: Container(
-        padding: EdgeInsets.all(15.0),
-        child: Column(
-          children: <Widget>[
-            Text(
-              'Omniroute',
-              style: Theme.of(context).textTheme.display2
+      body: Center(
+        child: Container(
+          padding: EdgeInsets.all(15.0),
+          width: 250.0,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'Omniroute',
+                  style: Theme.of(context).textTheme.display2.copyWith(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold,)
+                ),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Username'
+                  ),
+                ),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                  ),
+                  obscureText: true
+                ),
+                SizedBox(height: 20.0,),
+                Container(
+                  width: double.infinity,
+                  child: RaisedButton(
+                    color: Theme.of(context).primaryColor,
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) {
+                          return UpcommingTravelPage();
+                        }
+                      ));
+                    },
+                    child: Text('Login', style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+                SizedBox(height: 5.0,),
+                Text('Forgot the password?'),
+              ],
             ),
-            SizedBox(height: 20.0,),
-            TextFormField(
-              decoration: InputDecoration(
-                hintText: 'Username'
-              ),
-            ),
-            TextFormField(
-              decoration: InputDecoration(
-                hintText: 'Password'
-              ),
-            ),
-            SizedBox(height: 20.0,),
-            RaisedButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return UpcommingTravelPage();
-                  }
-                ));
-              },
-              child: Text('Login'),
-            )
-          ],
-        )
+          )
+        ),
       ),
     );
   }
