@@ -42,9 +42,8 @@ class LoginPage extends StatelessWidget {
           padding: EdgeInsets.all(15.0),
           width: 250.0,
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: ListView(
+              shrinkWrap: true,
               children: <Widget>[
                 Text(
                   'Omniroute',
