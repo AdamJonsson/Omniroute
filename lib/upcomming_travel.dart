@@ -389,7 +389,7 @@ class _TimeLineState extends State<TimeLine> {
           targetIsWork = true;
         }
         timelineCards.add(BussCard(
-          selectedStation.timeWhenBussArive,
+          selectedStation,
           targetIsWork,
           StationData.getStationBusIsAt(widget.stations),
         ));
@@ -539,8 +539,8 @@ class IconRowButton extends StatelessWidget {
 class BussCard extends StatefulWidget {
   final bool isWork;
   final Station stationAt;
-  final DateTime selectedStationTime;
-  BussCard(this.selectedStationTime, this.isWork, this.stationAt, {Key key}) : super(key: key);
+  final Station selectedStation;
+  BussCard(this.selectedStation, this.isWork, this.stationAt, {Key key}) : super(key: key);
 
   @override
   _BussCardState createState() => _BussCardState();
@@ -590,12 +590,22 @@ class _BussCardState extends State<BussCard> with SingleTickerProviderStateMixin
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  widget.isWork ? 'At your work in' : 'At your station in',
-                  style: Theme.of(context).textTheme.subhead,
+                Row(
+                  children: <Widget>[
+                    RichText(
+                      text: TextSpan(
+                        text: 'At ',
+                        style: Theme.of(context).textTheme.subhead,
+                        children: <TextSpan>[
+                          TextSpan(text: widget.isWork ? 'your work' : widget.selectedStation.name, style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: ' in'),
+                        ],
+                      ),
+                    )
+                  ],
                 ),
                 TimeLeftCounter(
-                  widget.selectedStationTime
+                  widget.selectedStation.timeWhenBussArive
                 ),
               ],
             ),
