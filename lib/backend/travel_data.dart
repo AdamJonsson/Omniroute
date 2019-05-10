@@ -224,28 +224,28 @@ class TravelDummyCreator {
       isSelectedStation: true
     ));
 
-    stationTime = stationTime.add(Duration(seconds: 30));
+    stationTime = stationTime.add(Duration(minutes: 2));
     stations.add(Station(
       name: 'Stadsbiblioteket',
       timeWhenBussArive: stationTime,
       coordinates: LatLng(59.344314, 18.055106),
     ));
 
-    stationTime = stationTime.add(Duration(seconds: 30));
+    stationTime = stationTime.add(Duration(minutes: 2));
     stations.add(Station(
       name: 'Roslagsgatan',
       timeWhenBussArive: stationTime,
       coordinates: LatLng(59.346922, 18.059569),
     ));
 
-    stationTime = stationTime.add(Duration(seconds: 30));
+    stationTime = stationTime.add(Duration(minutes: 3));
     stations.add(Station(
       name: 'Valhallavägen',
       timeWhenBussArive: stationTime,
       coordinates: LatLng(59.346825, 18.066786),
     ));
 
-    stationTime = stationTime.add(Duration(seconds: 30));
+    stationTime = stationTime.add(Duration(minutes: 2));
     stations.add(Station(
       name: 'Östra station',
       timeWhenBussArive: stationTime,
