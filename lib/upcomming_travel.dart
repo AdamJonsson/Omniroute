@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:omniroute/backend/travel_data.dart';
 import 'package:omniroute/map.dart';
+import 'package:omniroute/scrollable_sheet.dart';
 import 'package:omniroute/time_list.dart';
 
 class UpcommingTravelPage extends StatefulWidget {
@@ -50,52 +51,71 @@ class _UpcommingTravelPageState extends State<UpcommingTravelPage> {
         ],
         elevation: 2.0,
       ),
-      body: LayoutBuilder(
-        builder: (context, constrains) {
-          return CustomScrollView(
-            controller: _scrollController,
-            slivers: <Widget>[
-              SliverPersistentHeader(
-                delegate: TimlineContainerDelegate(
-                  viewportHeight: constrains.maxHeight,
-                  child: TimeLine(
-                    stations: _stations,
-                    onStationLocationButton: (station) {
-                      if(_scrollController != null) {
-                        _expandMap();
-                      }
-                      setState(() {
-                        _focusStation = station;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: StationMap(
-                  constrains.maxHeight, 
-                  _stations,
-                  _focusStation, 
-                  () {
-                    _expandMap();
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+      body: ScrollableSheet(
+        constrainSheetChild: true,
+        minSheetHeight: 0.05,
+        maxSheetHeight: 0.7,
+        sheetStops: [0.0, 0.5, 1.0],
+        child: TimeLine(
+          stations: _stations,
+          onStationLocationButton: (station) {
+            if(_scrollController != null) {
+              _expandMap();
+            }
+            setState(() {
+              _focusStation = station;
+            });
+          },
+        ),
+        sheetChild: StationMap(
+          _stations,
+          _focusStation, 
+          () {
+            _expandMap();
+          },
+        )
+      )
+          // return CustomScrollView(
+          //   controller: _scrollController,
+          //   slivers: <Widget>[
+          //     SliverPersistentHeader(
+          //       delegate: TimlineContainerDelegate(
+          //         viewportHeight: constrains.maxHeight,
+          //         child: TimeLine(
+          //           stations: _stations,
+          //           onStationLocationButton: (station) {
+          //             if(_scrollController != null) {
+          //               _expandMap();
+          //             }
+          //             setState(() {
+          //               _focusStation = station;
+          //             });
+          //           },
+          //         ),
+          //       ),
+          //     ),
+          //     SliverToBoxAdapter(
+          //       child: StationMap(
+          //         constrains.maxHeight, 
+          //         _stations,
+          //         _focusStation, 
+          //         () {
+          //           _expandMap();
+          //         },
+          //       ),
+          //     ),
+          //   ],
+          // );
     );
   }
 }
 
 
 class StationMap extends StatefulWidget {
-  final maxHeight;
   final List<Station> stations;
   final Station focusStation;
   final VoidCallback onTopDrawerClick;
-  StationMap(this.maxHeight, this.stations, this.focusStation, this.onTopDrawerClick);
+  StationMap(this.stations, this.focusStation, this.onTopDrawerClick);
 
   @override
   _StationMapState createState() => _StationMapState();
@@ -234,76 +254,61 @@ class _StationMapState extends State<StationMap> {
   Widget build(BuildContext context) {
 
     return Container(
-      height: widget.maxHeight * 0.9,
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-        child: Stack(
-          alignment: Alignment.topCenter,
-          children: <Widget>[
-            Container(
-              margin: EdgeInsets.only(top: 20),
-              child: GoogleMap(
-                myLocationEnabled: true,
-                onMapCreated: (controller) {
-                  _mapController = controller;
-                },
-                gestureRecognizers: Set()
-                  ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-                  ..add(Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer())),
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(59.3428, 18.0485),
-                  zoom: 16.0
-                ),
-                polylines: lines,
-                markers: _generateMarkers(),
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: <Widget>[
+          Container(
+            child: GoogleMap(
+              myLocationEnabled: true,
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
+              gestureRecognizers: Set()
+                ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
+                ..add(Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer())),
+              initialCameraPosition: CameraPosition(
+                target: LatLng(59.3428, 18.0485),
+                zoom: 16.0
               ),
+              polylines: lines,
+              markers: _generateMarkers(),
             ),
-            Positioned(
-              bottom: 115.0,
-              right: 10.0,
-              child: Material(
-                elevation: 3.0,
-                shape: CircleBorder(),
-                color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(5.0),
-                  child: IconButton(
-                    onPressed: () {
-                      _mapController.moveCamera(CameraUpdate.newLatLng(_busPosition));
-                    },
-                    icon: Icon(Icons.directions_bus, color: Colors.grey[700],),
-                  ),
-                ),
+          ),
+          Positioned(
+            top: 0.0,
+            left: 0.0,
+            right: 0.0,
+            child: Container(
+              height: 50.0,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.white, Colors.white.withOpacity(0.0)],
+                  end: Alignment.bottomCenter,
+                  begin: Alignment.topCenter,
+                )
               ),
-            ),
-            GestureDetector(
-              onTap: widget.onTopDrawerClick,
-              child: Container(
-                padding: EdgeInsets.only(top: 20.0),
-                height: 100.0,
-                width: double.infinity,
-                alignment: Alignment.topCenter,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.white, Colors.white.withOpacity(0.0)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.2, 1.0]
-                  )
-                ),
-                child: Container(
-                  decoration: ShapeDecoration(
-                    shape: StadiumBorder(),
-                    color: Colors.grey[300],
-                  ),
-                  height: 7.0,
-                  width: 100,
+            )
+          ),
+          Positioned(
+            bottom: 115.0,
+            right: 10.0,
+            child: Material(
+              elevation: 3.0,
+              shape: CircleBorder(),
+              color: Colors.white,
+              child: Padding(
+                padding: EdgeInsets.all(5.0),
+                child: IconButton(
+                  onPressed: () {
+                    _mapController.moveCamera(CameraUpdate.newLatLng(_busPosition));
+                  },
+                  icon: Icon(Icons.directions_bus, color: Colors.grey[700],),
                 ),
               ),
             ),
-          ],
-        ),
-      )
+          ),
+        ],
+      ),
     );
   }
 }
