@@ -52,6 +52,7 @@ class _UpcommingTravelPageState extends State<UpcommingTravelPage> {
         elevation: 2.0,
       ),
       body: ScrollableSheet(
+        scrollController: _scrollController,
         constrainSheetChild: true,
         minSheetHeight: 0.05,
         maxSheetHeight: 0.7,

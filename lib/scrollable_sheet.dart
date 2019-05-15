@@ -50,6 +50,8 @@ class ScrollableSheet extends StatefulWidget {
 
   final Widget child;
   final Widget sheetChild;
+  
+  final ScrollController scrollController;
 
   ///The height of the grab container
   static final grapHeight = 30.0;
@@ -71,7 +73,7 @@ class ScrollableSheet extends StatefulWidget {
   ///The stop the sheet should start with. Do not need to be within the [sheetStop] list
   final double initSheetStop;
 
-  ScrollableSheet({@required this.child, @required this.sheetChild, this.maxSheetHeight = 1.0, this.minSheetHeight = 0.3, this.constrainSheetChild = false, this.sheetStops = const [], this.initSheetStop});
+  ScrollableSheet({@required this.child, @required this.sheetChild, this.maxSheetHeight = 1.0, this.minSheetHeight = 0.3, this.constrainSheetChild = false, this.sheetStops = const [], this.initSheetStop, this.scrollController});
 
   @override
   _ScrollableSheetState createState() => _ScrollableSheetState();
@@ -79,7 +81,7 @@ class ScrollableSheet extends StatefulWidget {
 
 class _ScrollableSheetState extends State<ScrollableSheet> {
 
-  var _scrollController = ScrollController();
+  ScrollController _scrollController;
   bool _initScrollPosSet = false;
   int _currentSheetStopIndex = 0;
 
@@ -89,6 +91,7 @@ class _ScrollableSheetState extends State<ScrollableSheet> {
   @override
   void initState() {
     super.initState();
+    _scrollController = widget.scrollController ?? ScrollController();
     _scrollController.addListener(() {
       setState(() {
         
